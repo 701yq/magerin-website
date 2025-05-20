@@ -71,27 +71,30 @@ export async function getDashboardStats() {
     }
   }
 
-// Grafik pertumbuhan user berdasarkan bulan dari registerDate
-export async function getUserGrowthByMonth() {
+ export async function getUserGrowthByMonth() {
   const dbRef = ref(db);
   try {
-    const snapshot = await get(child(dbRef, "users"));
+    const snapshot = await get(child(dbRef, 'users'));
     if (!snapshot.exists()) return Array(12).fill(0);
 
     const users = Object.values(snapshot.val());
-    const counts = Array(12).fill(0);
+    const monthlyCounts = Array(12).fill(0);
 
     users.forEach(user => {
       const dateStr = user.registerDate;
       if (dateStr) {
-        const month = new Date(dateStr).getMonth(); // 0 = Jan, 11 = Dec
-        if (!isNaN(month)) counts[month]++;
+        const date = new Date(dateStr);
+        const month = date.getMonth(); // 0 = Jan, 11 = Dec
+        if (!isNaN(month)) {
+          monthlyCounts[month]++;
+        }
       }
     });
 
-    return counts;
+    console.log('monthlyCounts:', monthlyCounts);
+    return monthlyCounts;
   } catch (error) {
-    console.error("Gagal ambil data pertumbuhan pengguna:", error);
+    console.error('Gagal ambil data statistik pengguna:', error);
     return Array(12).fill(0);
   }
 }

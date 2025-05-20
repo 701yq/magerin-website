@@ -1,29 +1,72 @@
+<template>
+  <div class="overflow-x-auto bg-white rounded-lg shadow p-4">
+    <table class="min-w-full text-sm text-left text-gray-700">
+      <thead class="text-xs uppercase bg-gray-100">
+        <tr>
+          <th class="px-6 py-3">Nama Lengkap</th>
+          <th class="px-6 py-3">No Whatsapp</th>
+          <th class="px-6 py-3">Tanggal Terdaftar</th>
+          <th class="px-6 py-3">Status Akun</th>
+          <th class="px-6 py-3">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="user in users" :key="user.id" class="border-b hover:bg-gray-50">
+          <td class="px-6 py-4 font-medium">{{ user.namaLengkap || '-' }}</td>
+          <td class="px-6 py-4">{{ user.whatsapp || '-' }}</td>
+          <td class="px-6 py-4">{{ formatDate(user.registerDate) }}</td>
+          <td class="px-6 py-4">
+            <span :class="statusClass(user.status)" class="flex items-center gap-1">
+              <span class="h-2 w-2 rounded-full" :class="user.status === 'ya' ? 'bg-green-500' : 'bg-red-500'"></span>
+              {{ user.status === 'ya' ? 'Aktif' : 'Diblokir' }}
+            </span>
+          </td>
+          <td class="px-6 py-4 relative">
+            <div class="relative inline-block text-left">
+              <button
+                class="inline-flex items-center justify-center gap-2 w-full px-4 py-2 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 text-sm font-medium focus:outline-none"
+                @click="toggleDropdown(user)"
+              >
+                Pilih
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              <div
+                v-if="user.showDropdown"
+                class="absolute right-0 z-10 mt-2 w-40 origin-top-right bg-white border border-gray-200 rounded shadow-lg"
+              >
+                <button
+                  v-if="user.status === 'ya'"
+                  class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                  @click="updateStatus(user, 'tidak')"
+                >
+                  Blokir
+                </button>
+                <button
+                  v-else
+                  class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                  @click="updateStatus(user, 'ya')"
+                >
+                  Buka Blokir
+                </button>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</template>
+
 <script setup>
-import { onMounted, ref, watch } from 'vue'
-import { fetchUsers, updateUserStatus } from '@/api/firebaseService'
+import { ref } from 'vue'
+import { updateUserStatus } from '@/api/firebaseService'
 
 const props = defineProps({
-  searchQuery: String
+  users: Array
 })
-
-const users = ref([])
-const filteredUsers = ref([])
-
-onMounted(async () => {
-  users.value = await fetchUsers()
-  applyFilter()
-})
-
-watch(() => props.searchQuery, () => {
-  applyFilter()
-})
-
-function applyFilter() {
-  const q = props.searchQuery?.toLowerCase() || ''
-  filteredUsers.value = q
-    ? users.value.filter(user => user.namaLengkap?.toLowerCase().includes(q))
-    : users.value
-}
+const emit = defineEmits(['status-updated'])
 
 function formatDate(dateStr) {
   if (!dateStr) return '-'
@@ -35,52 +78,36 @@ function formatDate(dateStr) {
   })
 }
 
-async function toggleStatus(user) {
-  const newStatus = user.status === 'ya' ? 'tidak' : 'ya'
+function statusClass(status) {
+  return status === 'ya' ? 'text-green-600 font-medium' : 'text-red-500 font-medium'
+}
+
+function toggleDropdown(user) {
+  props.users.forEach(u => {
+    if (u !== user) u.showDropdown = false
+  })
+  user.showDropdown = !user.showDropdown
+}
+
+async function updateStatus(user, newStatus) {
   const success = await updateUserStatus(user.id, newStatus)
   if (success) {
     user.status = newStatus
+    user.showDropdown = false
+    emit('status-updated', newStatus === 'ya' ? 'Buka blokir pengguna telah berhasil' : 'Pengguna telah diblokir')
   } else {
-    alert("Gagal memperbarui status.")
+    alert('Gagal memperbarui status.')
   }
-}
-
-function statusClass(status) {
-  return status === 'tidak' ? 'text-red-500 font-medium' : 'text-green-600 font-medium'
 }
 </script>
 
-<template>
-  <div class="overflow-x-auto bg-white rounded-lg shadow p-4">
-    <table class="min-w-full text-sm text-left text-gray-700">
-      <thead class="text-xs uppercase bg-gray-100">
-        <tr>
-          <th class="px-6 py-3">Nama Lengkap</th>
-          <th class="px-6 py-3">Nomor WhatsApp</th>
-          <th class="px-6 py-3">Tanggal Terdaftar</th>
-          <th class="px-6 py-3">Status Akun</th>
-          <th class="px-6 py-3">Aksi</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="user in filteredUsers" :key="user.id" class="border-b hover:bg-gray-50">
-          <td class="px-6 py-4 font-medium">{{ user.namaLengkap || '-' }}</td>
-          <td class="px-6 py-4">{{ user.whatsapp || '-' }}</td>
-          <td class="px-6 py-4">{{ formatDate(user.registerDate) }}</td>
-          <td class="px-6 py-4">
-            <span :class="statusClass(user.status)">
-              {{ user.status || '-' }}
-            </span>
-          </td>
-          <td class="px-6 py-4">
-            <button
-              class="text-sm px-3 py-1 rounded bg-blue-100 text-blue-600 hover:bg-blue-200"
-              @click="toggleStatus(user)">
-              {{ user.status === 'tidak' ? 'Buka Blokir' : 'Blokir' }}
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</template>
+<style scoped>
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+th,
+td {
+  text-align: left;
+}
+</style>
