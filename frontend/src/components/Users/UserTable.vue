@@ -1,17 +1,38 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { fetchUsers, updateUserStatus } from '@/api/firebaseService'
 
+const props = defineProps({
+  searchQuery: String
+})
+
 const users = ref([])
+const filteredUsers = ref([])
 
 onMounted(async () => {
   users.value = await fetchUsers()
+  applyFilter()
 })
+
+watch(() => props.searchQuery, () => {
+  applyFilter()
+})
+
+function applyFilter() {
+  const q = props.searchQuery?.toLowerCase() || ''
+  filteredUsers.value = q
+    ? users.value.filter(user => user.namaLengkap?.toLowerCase().includes(q))
+    : users.value
+}
 
 function formatDate(dateStr) {
   if (!dateStr) return '-'
   const date = new Date(dateStr)
-  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+  return date.toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  })
 }
 
 async function toggleStatus(user) {
@@ -42,7 +63,7 @@ function statusClass(status) {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="user in users" :key="user.id" class="border-b hover:bg-gray-50">
+        <tr v-for="user in filteredUsers" :key="user.id" class="border-b hover:bg-gray-50">
           <td class="px-6 py-4 font-medium">{{ user.namaLengkap || '-' }}</td>
           <td class="px-6 py-4">{{ user.whatsapp || '-' }}</td>
           <td class="px-6 py-4">{{ formatDate(user.registerDate) }}</td>
