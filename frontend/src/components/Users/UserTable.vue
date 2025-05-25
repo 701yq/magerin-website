@@ -4,6 +4,7 @@
       <thead class="text-xs uppercase bg-gray-100">
         <tr>
           <th class="px-6 py-3">Nama Lengkap</th>
+          <th class="px-6 py-3">Mahasiswa UB</th>
           <th class="px-6 py-3">No Whatsapp</th>
           <th class="px-6 py-3">Tanggal Terdaftar</th>
           <th class="px-6 py-3">Status Akun</th>
@@ -13,6 +14,7 @@
       <tbody>
         <tr v-for="user in users" :key="user.id" class="border-b hover:bg-gray-50">
           <td class="px-6 py-4 font-medium">{{ user.namaLengkap || '-' }}</td>
+          <td class="px-6 py-4">{{ user.mahasiswaUB || '-' }}</td>
           <td class="px-6 py-4">{{ user.whatsapp || '-' }}</td>
           <td class="px-6 py-4">{{ formatDate(user.registerDate) }}</td>
           <td class="px-6 py-4">
@@ -22,30 +24,28 @@
             </span>
           </td>
           <td class="px-6 py-4 relative">
-            <div class="relative inline-block text-left">
+            <div class="relative">
               <button
-                class="inline-flex items-center justify-center gap-2 w-full px-4 py-2 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 text-sm font-medium focus:outline-none"
+                class="px-4 py-1 rounded-full text-blue-600 bg-blue-100 hover:bg-blue-200 flex items-center justify-between gap-2 w-24"
                 @click="toggleDropdown(user)"
               >
                 Pilih
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                </svg>
+                <span class="text-xs">▾</span>
               </button>
               <div
                 v-if="user.showDropdown"
-                class="absolute right-0 z-10 mt-2 w-40 origin-top-right bg-white border border-gray-200 rounded shadow-lg"
+                class="absolute right-0 mt-1 w-32 bg-white border rounded shadow z-10"
               >
                 <button
                   v-if="user.status === 'ya'"
-                  class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                  class="w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
                   @click="updateStatus(user, 'tidak')"
                 >
                   Blokir
                 </button>
                 <button
                   v-else
-                  class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                  class="w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
                   @click="updateStatus(user, 'ya')"
                 >
                   Buka Blokir
@@ -71,11 +71,7 @@ const emit = defineEmits(['status-updated'])
 function formatDate(dateStr) {
   if (!dateStr) return '-'
   const date = new Date(dateStr)
-  return date.toLocaleDateString('id-ID', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  })
+  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 function statusClass(status) {
@@ -106,8 +102,7 @@ table {
   border-collapse: collapse;
   width: 100%;
 }
-th,
-td {
+th, td {
   text-align: left;
 }
 </style>

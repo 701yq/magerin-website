@@ -1,9 +1,17 @@
 // firebaseService.js
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getDatabase, ref, get, child } from "firebase/database";
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { update } from "firebase/database";
+import {
+  getDatabase,
+  ref,
+  get,
+  child,
+  update
+} from "firebase/database";
+import {
+  getAuth,
+  signInWithEmailAndPassword
+} from "firebase/auth";
 
 // Konfigurasi Firebase dari Web App
 const firebaseConfig = {
@@ -23,7 +31,9 @@ const analytics = getAnalytics(app);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-// Fungsi login admin
+export { db };
+
+// ---------------- AUTH ----------------
 export async function loginAdmin(email, password) {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -33,7 +43,7 @@ export async function loginAdmin(email, password) {
   }
 }
 
-// Ambil semua pengguna dari Realtime Database
+// ---------------- USERS ----------------
 export async function fetchUsers() {
   const dbRef = ref(db);
   try {
@@ -50,28 +60,38 @@ export async function fetchUsers() {
   }
 }
 
-// firebaseService.js
-export async function getDashboardStats() {
-    const dbRef = ref(db)
-    try {
-      const snapshot = await get(child(dbRef, "users"))
-      if (!snapshot.exists()) return { total: 0, aktif: 0 }
-  
-      const users = snapshot.val()
-  
-      const total = Object.keys(users).length
-      const aktif = Object.values(users).filter(
-        user => user.status && user.status.toLowerCase() === "ya"
-      ).length
-  
-      return { total, aktif }
-    } catch (error) {
-      console.error("Gagal mengambil statistik dashboard:", error)
-      return { total: 0, aktif: 0 }
-    }
+export async function updateUserStatus(userId, status) {
+  const dbRef = ref(db, `users/${userId}`);
+  try {
+    await update(dbRef, { status });
+    return true;
+  } catch (error) {
+    console.error("Gagal update status:", error);
+    return false;
   }
+}
 
- export async function getUserGrowthByMonth() {
+// ---------------- DASHBOARD STATS ----------------
+export async function getDashboardStats() {
+  const dbRef = ref(db);
+  try {
+    const snapshot = await get(child(dbRef, "users"));
+    if (!snapshot.exists()) return { total: 0, aktif: 0 };
+
+    const users = snapshot.val();
+    const total = Object.keys(users).length;
+    const aktif = Object.values(users).filter(
+      user => user.status && user.status.toLowerCase() === "ya"
+    ).length;
+
+    return { total, aktif };
+  } catch (error) {
+    console.error("Gagal mengambil statistik dashboard:", error);
+    return { total: 0, aktif: 0 };
+  }
+}
+
+export async function getUserGrowthByMonth() {
   const dbRef = ref(db);
   try {
     const snapshot = await get(child(dbRef, 'users'));
@@ -91,7 +111,6 @@ export async function getDashboardStats() {
       }
     });
 
-    console.log('monthlyCounts:', monthlyCounts);
     return monthlyCounts;
   } catch (error) {
     console.error('Gagal ambil data statistik pengguna:', error);
@@ -99,13 +118,55 @@ export async function getDashboardStats() {
   }
 }
 
-export async function updateUserStatus(userId, status) {
-    const dbRef = ref(db, `users/${userId}`);
-    try {
-      await update(dbRef, { status });
-      return true;
-    } catch (error) {
-      console.error("Gagal update status:", error);
-      return false;
-    }
+// ---------------- REPORTS ----------------
+export async function fetchAllReports() {
+  const dbRef = ref(db);
+  try {
+    const snapshot = await get(child(dbRef, 'laporan'));
+    if (!snapshot.exists()) return [];
+
+    const data = snapshot.val();
+    return Object.entries(data).map(([id, value]) => ({ id, ...value }));
+  } catch (error) {
+    console.error("Gagal mengambil data laporan:", error);
+    return [];
   }
+}
+
+export async function updateReportStatus(reportId, status) {
+  const dbRef = ref(db, `laporan/${reportId}`);
+  try {
+    await update(dbRef, { status });
+    return true;
+  } catch (error) {
+    console.error("Gagal update status laporan:", error);
+    return false;
+  }
+}
+
+export async function countTotalReports() {
+  const dbRef = ref(db);
+  try {
+    const snapshot = await get(child(dbRef, 'laporan'));
+    if (!snapshot.exists()) return 0;
+    return Object.keys(snapshot.val()).length;
+  } catch (error) {
+    console.error('Gagal mengambil jumlah laporan:', error);
+    return 0;
+  }
+}
+
+export async function getTotalMahasiswaUB() {
+  const dbRef = ref(db)
+  try {
+    const snapshot = await get(child(dbRef, 'users'))
+    if (!snapshot.exists()) return 0
+
+    const users = Object.values(snapshot.val())
+    return users.filter(user => user.mahasiswaUB?.toLowerCase() === 'ya').length
+  } catch (error) {
+    console.error('Gagal menghitung mahasiswa UB:', error)
+    return 0
+  }
+}
+

@@ -1,7 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
+
+// Views
 import Login from '@/views/Login.vue'
 import Dashboard from '@/views/Dashboard.vue'
 import Users from '@/views/Users.vue'
+import Reports from '@/views/Reports.vue'
+import ReportsPending from '@/views/ReportsPending.vue'
+import ReportsCompleted from '@/views/ReportsCompleted.vue'
 
 const routes = [
   {
@@ -24,6 +29,24 @@ const routes = [
     name: 'Users',
     component: Users,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/reports',
+    name: 'Reports',
+    component: Reports,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/reports/pending',
+    name: 'ReportsPending',
+    component: ReportsPending,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/reports/completed',
+    name: 'ReportsCompleted',
+    component: ReportsCompleted,
+    meta: { requiresAuth: true }
   }
 ]
 
@@ -32,7 +55,7 @@ const router = createRouter({
   routes
 })
 
-// Middleware: redirect kalau belum login
+// Middleware auth check
 router.beforeEach((to, from, next) => {
   const isLoggedIn = localStorage.getItem('adminToken')
   if (to.meta.requiresAuth && !isLoggedIn) {
