@@ -39,6 +39,8 @@ const emit = defineEmits(['status-updated'])
 
 const updateStatus = async (report) => {
   const success = await updateReportStatus(report.id, report.status)
-  if (success) emit('status-updated')
+  if (success && report.status === 'Selesai') {
+    emit('status-updated', 'Pelaporan telah selesai diproses')
+  }
 }
 </script>

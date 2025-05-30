@@ -24,9 +24,25 @@
         </div>
 
         <!-- Tabel laporan -->
-        <ReportTable :reports="filteredReports" @status-updated="fetchReports" />
+        <ReportTable :reports="filteredReports" @status-updated="showDialog" />
       </div>
     </div>
+
+    <!-- Dialog Notifikasi -->
+    <transition name="fade">
+      <div v-if="dialogVisible" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 text-center shadow-lg max-w-xs w-full">
+          <div class="text-green-500 text-4xl mb-4">✔️</div>
+          <p class="text-sm text-gray-700 mb-4">{{ dialogMessage }}</p>
+          <button
+            class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded"
+            @click="dialogVisible = false"
+          >
+            Selesai
+          </button>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -37,22 +53,29 @@ import Topbar from '@/components/Layout/Topbar.vue'
 import ReportTable from '@/components/Reports/ReportTable.vue'
 import { fetchAllReports } from '@/api/firebaseService'
 
-// props untuk mendukung halaman seperti /reports/pending dan /reports/completed
+// Props untuk mendukung pemfilteran halaman seperti /pending dan /completed
 const props = defineProps({
   filterStatus: String
 })
 
 const reports = ref([])
 const searchQuery = ref('')
+const dialogVisible = ref(false)
+const dialogMessage = ref('')
 
-// Ambil data dari firebase
+// Ambil data dari Firebase
 const fetchReports = async () => {
   reports.value = await fetchAllReports()
 }
-
 onMounted(fetchReports)
 
-// Filter berdasarkan status dan pencarian
+// Tampilkan dialog saat status updated
+function showDialog(message) {
+  dialogMessage.value = message
+  dialogVisible.value = true
+}
+
+// Filter laporan berdasarkan status dan pencarian
 const filteredReports = computed(() => {
   let result = [...reports.value]
 
@@ -69,3 +92,12 @@ const filteredReports = computed(() => {
   return result
 })
 </script>
+
+<style scoped>
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+</style>
